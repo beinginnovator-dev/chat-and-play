@@ -943,6 +943,9 @@
       if (gameId === 'memory') {
         return <AIMemoryGame difficulty={difficulty} setAiScore={setAiScore} setStatus={setStatus} />;
       }
+      if (gameId === 'trivia') {
+        return <AITriviaGame difficulty={difficulty} setAiScore={setAiScore} setStatus={setStatus} />;
+      }
       // Fallback for other games
       return (
         <div className="text-center p-8 bg-white/5 rounded-2xl">
@@ -950,6 +953,92 @@
           <p className="text-lg">{status}</p>
           <p className="text-2xl font-bold text-blue-300 mt-2">AI Score: {aiScore}</p>
           <p className="text-sm text-white/60 mt-4">AI is playing {gameId}...</p>
+        </div>
+      );
+    }
+
+    
+    function AITriviaGame({ difficulty, setAiScore, setStatus }) {
+      const questions = {
+        Easy: [
+          { q: 'What is the capital of France?', a: ['London', 'Paris', 'Berlin', 'Madrid'], correct: 1 },
+          { q: 'How many continents are there?', a: ['5', '6', '7', '8'], correct: 2 },
+          { q: 'What color is the sky on a clear day?', a: ['Green', 'Blue', 'Red', 'Yellow'], correct: 1 },
+          { q: 'Which animal is known as the King of the Jungle?', a: ['Tiger', 'Lion', 'Elephant', 'Bear'], correct: 1 },
+          { q: 'How many days are in a leap year?', a: ['365', '366', '364', '367'], correct: 1 },
+        ],
+        Medium: [
+          { q: 'Who painted the Mona Lisa?', a: ['Van Gogh', 'Picasso', 'Da Vinci', 'Michelangelo'], correct: 2 },
+          { q: 'What is the largest planet in our solar system?', a: ['Earth', 'Saturn', 'Jupiter', 'Mars'], correct: 2 },
+          { q: 'In which year did World War II end?', a: ['1943', '1945', '1950', '1939'], correct: 1 },
+          { q: 'What is the chemical symbol for gold?', a: ['Go', 'Gd', 'Au', 'Ag'], correct: 2 },
+          { q: 'Which country hosted the 2016 Summer Olympics?', a: ['China', 'Brazil', 'UK', 'Japan'], correct: 1 },
+        ],
+        Hard: [
+          { q: 'What is the approximate speed of light?', a: ['150,000 km/s', '300,000 km/s', '500,000 km/s', '1,000,000 km/s'], correct: 1 },
+          { q: 'Who discovered penicillin?', a: ['Einstein', 'Newton', 'Fleming', 'Curie'], correct: 2 },
+          { q: 'What is the smallest country in the world?', a: ['Monaco', 'Vatican City', 'Liechtenstein', 'San Marino'], correct: 1 },
+          { q: 'In which year was the first iPhone released?', a: ['2005', '2007', '2009', '2010'], correct: 1 },
+          { q: 'What is the capital of Australia?', a: ['Sydney', 'Melbourne', 'Canberra', 'Perth'], correct: 2 },
+        ]
+      };
+
+      const qs = questions[difficulty] || questions.Medium;
+      const [qIndex, setQIndex] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [showResult, setShowResult] = useState(false);
+      const q = qs[qIndex % qs.length];
+
+      useEffect(() => {
+        setStatus('AI is reading the question...');
+        const thinkTime = 800 + Math.random() * 1200;
+        const timer = setTimeout(() => {
+          // AI chooses correctly most of the time
+          const willBeCorrect = Math.random() > 0.25;
+          const choice = willBeCorrect ? q.correct : Math.floor(Math.random() * q.a.length);
+          setSelected(choice);
+          setShowResult(true);
+          if (choice === q.correct) {
+            setAiScore(s => s + 25);
+            setStatus('AI answered correctly!');
+          } else {
+            setStatus('AI answered incorrectly');
+          }
+          setTimeout(() => {
+            setShowResult(false);
+            setSelected(null);
+            setQIndex(i => i + 1);
+            setStatus('AI is thinking...');
+          }, 1400);
+        }, thinkTime);
+        return () => clearTimeout(timer);
+      }, [qIndex]);
+
+      return (
+        <div className="text-center w-full max-w-lg mx-auto">
+          <div className="text-xl mb-6 font-medium">{q.q}</div>
+          <div className="space-y-3">
+            {q.a.map((opt, i) => {
+              let btnClass = "w-full py-3 rounded-xl text-base transition ";
+              if (!showResult) {
+                btnClass += "bg-white/15";
+              } else {
+                if (i === q.correct) btnClass += "bg-green-500";
+                else if (i === selected) btnClass += "bg-red-500";
+                else btnClass += "bg-white/10 opacity-50";
+              }
+              return (
+                <div key={i} className={btnClass}>
+                  {opt}
+                </div>
+              );
+            })}
+          </div>
+          {showResult && (
+            <div className="mt-4 text-lg font-semibold">
+              {selected === q.correct ? '✅ AI Correct!' : '❌ AI Wrong'}
+            </div>
+          )}
         </div>
       );
     }
