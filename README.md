@@ -5,7 +5,7 @@ A fun web app for chatting and playing short timed games (1, 2, or 5 minutes) wi
 **Live Demo:** Open `index.html` directly or host it. For GitHub Pages: Go to Settings → Pages → Deploy from branch → main / root.
 
 ## Features
-- 10 unique games, each with **Easy / Medium / Hard** difficulty
+- 6 unique games, each with **Easy / Medium / Hard** difficulty
 - Timed challenges: choose 1 min, 2 mins, or 5 mins
 - Create a challenge and get a unique code
 - Join a friend's challenge using their code
