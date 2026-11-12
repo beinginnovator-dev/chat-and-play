@@ -17,7 +17,7 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; }
     .game-card:hover { transform: translateY(-4px); transition: all 0.2s; }
     .timer { font-variant-numeric: tabular-nums; }
-    .floating-msg { 
+    .floating-msg { background: rgba(15,23,42,0.92); color: #f8fafc; border: 1px solid rgba(236,72,153,0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.8);   
       position: absolute;
       animation: floatUp 5s ease-out forwards;
       left: 50%;
@@ -358,9 +358,13 @@
               </div>
               {isWinner && <p className="text-xl text-yellow-300 mb-4 animate-pulse">🎉 Congratulations! 🎉</p>}
               {challengeCode && <p className="bg-white/20 inline-block px-4 py-2 rounded-full mb-4 text-sm">Code: {challengeCode}</p>}
+              <button onClick={() => { setPlayVsAI(true); setScreen("playing"); }} className="w-full bg-indigo-600 py-3 rounded-xl font-semibold mb-3 flex items-center justify-center gap-2">
+                <i className="fas fa-eye"></i> Watch AI Play
+              </button>
               <button onClick={() => shareWhatsApp(challengeCode)} className="w-full bg-green-600 py-3 rounded-xl font-semibold mb-3 flex items-center justify-center gap-2">
                 <i className="fab fa-whatsapp"></i> Share on WhatsApp
               </button>
+              <button onClick={() => setScreen("home")} className="w-full bg-white/20 py-3 rounded-xl">Back to Games</button>
               <button onClick={() => setScreen('home')} className="w-full bg-white/20 py-3 rounded-xl">Back to Games</button>
             </div>
           </div>
@@ -473,16 +477,10 @@
                 </div>
               )}
               <button onClick={onExit} className="bg-red-500/80 px-3 py-1 rounded-lg text-sm">Exit</button>
-              <button onClick={() => shareWhatsApp(challengeCode)} className="bg-green-600 px-3 py-1 rounded-lg text-sm">
-                <i className="fab fa-whatsapp"></i>
-              </button>
-            </div>
-          </div>
-
           <div className="flex-1 relative flex items-center justify-center p-4">
             {/* Floating messages from bottom */}
             {floatingMsgs.map(m => (
-              <div key={m.id} className="floating-msg bg-pink-500/90 px-4 py-1.5 rounded-full text-sm shadow-lg z-20 whitespace-nowrap">
+              <div key={m.id} className="floating-msg px-4 py-2 rounded-full text-sm font-semibold shadow-2xl z-30 whitespace-nowrap">
                 {m.user}: {m.text}
               </div>
             ))}
@@ -505,7 +503,7 @@
           </div>
 
           {/* Chat below game */}
-          <div className="bg-black/50 border-t border-white/10 p-3">
+          <div className="bg-black/80 border-t border-white/20 p-3">
             <div className="max-h-28 overflow-y-auto mb-2 text-sm space-y-1">
               {chatMessages.slice(-10).map((m, i) => (
                 <div key={m.id || i} className={m.user === 'System' ? 'text-yellow-300' : ''}>
