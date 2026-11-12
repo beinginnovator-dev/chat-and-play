@@ -237,8 +237,8 @@
               </div>
               <p className="text-xs text-white/50 mt-2">Max {MAX_PLAYERS} players per challenge</p>
             </div>
-
-            
+          </div>
+        );
       }
 
       if (screen === 'setup') {
@@ -461,6 +461,12 @@
                 </div>
               )}
               <button onClick={onExit} className="bg-red-500/80 px-3 py-1 rounded-lg text-sm">Exit</button>
+              <button onClick={() => shareWhatsApp(challengeCode)} className="bg-green-600 px-3 py-1 rounded-lg text-sm">
+                <i className="fab fa-whatsapp"></i>
+              </button>
+            </div>
+          </div>
+
           <div className="flex-1 relative flex items-center justify-center p-4">
             
             {/* Mini other player activity window */}
