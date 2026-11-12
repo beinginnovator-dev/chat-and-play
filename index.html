@@ -281,14 +281,18 @@
               </button>
             </header>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {GAMES.map(game => (
-                <div key={game.id} onClick={() => startGame(game)} className="game-card bg-white/10 backdrop-blur rounded-2xl p-5 cursor-pointer border border-white/10 hover:border-pink-400">
-                  <div className="text-4xl mb-3 text-pink-300"><i className={`fas ${game.icon}`}></i></div>
-                  <h3 className="font-bold text-lg">{game.name}</h3>
-                  <p className="text-sm text-white/60 mt-1">{game.desc}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+              {GAMES.map((game, idx) => {
+                const colors = ['from-pink-500/30 to-purple-500/30', 'from-blue-500/30 to-cyan-500/30', 'from-green-500/30 to-emerald-500/30', 'from-orange-500/30 to-yellow-500/30', 'from-indigo-500/30 to-violet-500/30', 'from-rose-500/30 to-pink-500/30'];
+                const color = colors[idx % colors.length];
+                return (
+                  <div key={game.id} onClick={() => startGame(game)} className={`game-card bg-gradient-to-br ${color} backdrop-blur rounded-2xl p-4 cursor-pointer border border-white/20 hover:border-white/50 hover:scale-105 transition-all`}>
+                    <div className="text-3xl mb-2 text-white"><i className={`fas ${game.icon}`}></i></div>
+                    <h3 className="font-bold text-sm">{game.name}</h3>
+                    <p className="text-xs text-white/70 mt-1 line-clamp-2">{game.desc}</p>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="bg-white/10 backdrop-blur rounded-2xl p-4 max-w-md mb-4">
@@ -615,6 +619,13 @@
                 <h3 className="text-3xl font-bold">Time's Up!</h3>
                 <p className="text-xl mt-2">Your Score: {score}</p>
               </div>
+            ) : selectedOpponent === 'AI' ? (
+              <div className="w-full">
+                <div className="text-center mb-3 text-sm text-blue-300">
+                  <i className="fas fa-robot mr-1"></i> Watching AI play {game.name}
+                </div>
+                <AIGameView gameId={game.id} difficulty={difficulty} />
+              </div>
             ) : (
               <GameContent 
                 gameId={game.id} 
@@ -917,6 +928,103 @@
           {tiles.map((tile, i) => (
             <div key={i} onClick={() => move(i)} className={`w-[70px] h-[70px] rounded-lg flex items-center justify-center text-2xl font-bold cursor-pointer ${tile === empty ? 'bg-transparent' : 'bg-pink-500 hover:bg-pink-400'}`}>
               {tile === empty ? '' : tile + 1}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    
+    // AI spectator view - shows AI actually playing the game
+    function AIGameView({ gameId, difficulty }) {
+      const [aiScore, setAiScore] = useState(0);
+      const [status, setStatus] = useState('AI is thinking...');
+
+      if (gameId === 'memory') {
+        return <AIMemoryGame difficulty={difficulty} setAiScore={setAiScore} setStatus={setStatus} />;
+      }
+      // Fallback for other games
+      return (
+        <div className="text-center p-8 bg-white/5 rounded-2xl">
+          <div className="text-4xl mb-4">🤖</div>
+          <p className="text-lg">{status}</p>
+          <p className="text-2xl font-bold text-blue-300 mt-2">AI Score: {aiScore}</p>
+          <p className="text-sm text-white/60 mt-4">AI is playing {gameId}...</p>
+        </div>
+      );
+    }
+
+    function AIMemoryGame({ difficulty, setAiScore, setStatus }) {
+      const pairs = difficulty === 'Easy' ? 6 : difficulty === 'Medium' ? 8 : 10;
+      const emojis = ['🍎','🍌','🍇','🍊','🍓','🍉','🥝','🍍','🥭','🍑','🍒','🥥'];
+      const [cards, setCards] = useState([]);
+      const [flipped, setFlipped] = useState([]);
+      const [matched, setMatched] = useState([]);
+      const [aiMemory, setAiMemory] = useState({});
+
+      useEffect(() => {
+        const selected = emojis.slice(0, pairs);
+        const deck = [...selected, ...selected].sort(() => Math.random() - 0.5).map((e, i) => ({ id: i, emoji: e }));
+        setCards(deck);
+        setStatus('AI is looking for matches...');
+      }, [difficulty]);
+
+      // AI auto-play logic
+      useEffect(() => {
+        if (cards.length === 0 || matched.length >= cards.length) return;
+        const timer = setTimeout(() => {
+          const unmatched = cards.map((_, i) => i).filter(i => !matched.includes(i));
+          if (unmatched.length < 2) return;
+
+          // Simple AI: remember seen cards and try to match
+          let first = unmatched[Math.floor(Math.random() * unmatched.length)];
+          let second = unmatched.filter(i => i !== first)[Math.floor(Math.random() * (unmatched.length - 1))];
+
+          // Prefer matching known pairs
+          const known = Object.entries(aiMemory);
+          for (const [emoji, ids] of known) {
+            if (ids.length >= 2 && !matched.includes(ids[0])) {
+              first = ids[0];
+              second = ids[1];
+              break;
+            }
+          }
+
+          setFlipped([first, second]);
+          setAiMemory(prev => {
+            const next = { ...prev };
+            [first, second].forEach(id => {
+              const e = cards[id].emoji;
+              if (!next[e]) next[e] = [];
+              if (!next[e].includes(id)) next[e].push(id);
+            });
+            return next;
+          });
+
+          setTimeout(() => {
+            if (cards[first].emoji === cards[second].emoji) {
+              setMatched(m => [...m, first, second]);
+              setAiScore(s => s + 20);
+              setStatus('AI found a match!');
+            } else {
+              setStatus('AI is searching...');
+            }
+            setFlipped([]);
+          }, 900);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }, [cards, matched, flipped]);
+
+      return (
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 w-full max-w-md mx-auto">
+          {cards.map(card => (
+            <div
+              key={card.id}
+              className={`aspect-square rounded-xl flex items-center justify-center text-2xl transition-all ${
+                flipped.includes(card.id) || matched.includes(card.id) ? 'bg-white/40' : 'bg-blue-600/70'
+              }`}
+            >
+              {(flipped.includes(card.id) || matched.includes(card.id)) ? card.emoji : '?'}
             </div>
           ))}
         </div>
