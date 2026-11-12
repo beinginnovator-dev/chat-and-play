@@ -1,46 +1,36 @@
 # Chat & Play - Timed Multiplayer Challenges
 
-A fun web app for chatting and playing short timed games (1, 2, or 5 minutes) with friends.
+A fun web app for chatting and playing short timed games (1, 2, or 5 minutes) with friends or AI.
 
-**Live Demo:** Open `index.html` directly or host it. For GitHub Pages: Go to Settings → Pages → Deploy from branch → main / root.
+**GitHub:** https://github.com/beinginnovator-dev/chat-and-play
 
 ## Features
-- 6 unique games, each with **Easy / Medium / Hard** difficulty
-- Timed challenges: choose 1 min, 2 mins, or 5 mins
-- Create a challenge and get a unique code
-- Join a friend's challenge using their code
-- **Share directly on WhatsApp** with pre-filled message including game, difficulty, time, and code
-- Live chat panel
-- Local score history
-- Mobile-friendly beautiful UI
+- 6 unique games with Easy / Medium / Hard
+- Timed challenges (1/2/5 min)
+- Invite friends via WhatsApp
+- Play vs AI
+- Live chat with floating messages (bottom → top)
+- Live scores at top of game (max 10 players)
+- Winner celebration
+- Installable as PWA / can be turned into APK
 
 ## How to Run
-1. Open `index.html` in any modern browser (Chrome, Safari, Firefox, Edge)
-2. Or clone this repo and open `index.html`
-3. Enter your username
-4. Pick a game, set difficulty and time
-5. Create challenge or join with code
-6. Play and share results via WhatsApp!
+Open `index.html` in a browser, or deploy to GitHub Pages / Cloudflare / Netlify.
 
-## Games Included
-1. **Math Sprint** 🧮 - Solve math problems
-2. **Memory Match** 🧠 - Flip and match cards
-3. **Reaction Time** ⚡ - Click when it turns green
-4. **Word Scramble** 🔤 - Unscramble words
-5. **Number Sequence** 🔢 - Find the pattern
-6. **Typing Speed** ⌨️ - Type words fast
-7. **Color Match** 🎨 - Match color name vs display
-8. **Quick Trivia** ❓ - Answer questions
-9. **Snake** 🐍 - Classic snake (arrow keys)
-10. **Slide Puzzle** 🧩 - Slide tiles to solve
+## Making it an installable APK (updatable)
+1. Deploy the app online (GitHub Pages or Cloudflare).
+2. Go to [PWABuilder](https://www.pwabuilder.com/) → enter your live URL.
+3. Generate Android package → download the APK or TWA.
+4. Future updates: just push to GitHub; the installed PWA/APK will pick up changes (or regenerate APK).
 
-## For Real Multiplayer
-This is a frontend prototype. Scores and chat are local.
-To make true multiplayer:
-- Add a backend (Firebase Realtime DB, Supabase, or Socket.io server)
-- Sync challenge rooms by code
-- Real-time score comparison and chat
+Alternatively, use Capacitor + Android Studio for a native wrapper.
 
-Perfect for sharing via WhatsApp links once hosted (Netlify, Vercel, GitHub Pages, etc.).
+## Games
+1. Memory Match
+2. Word Scramble
+3. Number Sequence
+4. Typing Speed
+5. General Knowledge
+6. Slide Puzzle
 
-Enjoy challenging your friends!
+Enjoy!
