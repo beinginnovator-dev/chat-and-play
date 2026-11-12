@@ -2,6 +2,8 @@
 
 A fun web app for chatting and playing short timed games (1, 2, or 5 minutes) with friends.
 
+**Live Demo:** Open `index.html` directly or host it. For GitHub Pages: Go to Settings → Pages → Deploy from branch → main / root.
+
 ## Features
 - 10 unique games, each with **Easy / Medium / Hard** difficulty
 - Timed challenges: choose 1 min, 2 mins, or 5 mins
@@ -14,10 +16,11 @@ A fun web app for chatting and playing short timed games (1, 2, or 5 minutes) wi
 
 ## How to Run
 1. Open `index.html` in any modern browser (Chrome, Safari, Firefox, Edge)
-2. Enter your username
-3. Pick a game, set difficulty and time
-4. Create challenge or join with code
-5. Play and share results!
+2. Or clone this repo and open `index.html`
+3. Enter your username
+4. Pick a game, set difficulty and time
+5. Create challenge or join with code
+6. Play and share results via WhatsApp!
 
 ## Games Included
 1. **Math Sprint** 🧮 - Solve math problems
