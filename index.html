@@ -56,6 +56,7 @@
       const [challengeCode, setChallengeCode] = useState('');
       const [joinCode, setJoinCode] = useState('');
       const [playVsAI, setPlayVsAI] = useState(false);
+      const [joinPopup, setJoinPopup] = useState(null); // {code, creator, game, difficulty, time}
       const [chatMessages, setChatMessages] = useState([
         { user: 'System', text: 'Welcome to Chat & Play! Invite friends or play vs AI.', time: new Date().toLocaleTimeString() }
       ]);
@@ -67,14 +68,19 @@
         localStorage.setItem('username', username);
       }, [username]);
 
-      // Auto-join from URL
+      // Show join popup from URL
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const join = params.get('join');
-        if (join && username && screen === 'home') {
-          setJoinCode(join);
-          setTimeout(() => joinChallenge(), 500);
-          // Clean URL
+        if (join && username && (screen === 'home' || screen === 'login')) {
+          const meta = JSON.parse(localStorage.getItem(`meta_${join}`) || 'null');
+          setJoinPopup({
+            code: join,
+            creator: meta?.creator || 'A player',
+            game: meta?.game || 'a game',
+            difficulty: meta?.difficulty || 'Medium',
+            time: meta?.time || 1
+          });
           window.history.replaceState({}, '', window.location.pathname);
         }
       }, [username, screen]);
@@ -106,6 +112,16 @@
           addChat('System', `${username} started a match vs AI: ${selectedGame.name} (${difficulty})`);
         } else {
           addChat('System', `${username} created a challenge: ${selectedGame.name} (${difficulty}, ${timeLimit} min). Code: ${code}`);
+          // Store challenge metadata
+          const meta = {
+            creator: username,
+            game: selectedGame.name,
+            gameId: selectedGame.id,
+            difficulty,
+            time: timeLimit,
+            created: Date.now()
+          };
+          localStorage.setItem(`meta_${code}`, JSON.stringify(meta));
           // Track participants
           const key = `participants_${code}`;
           const parts = JSON.parse(localStorage.getItem(key) || '[]');
@@ -141,7 +157,7 @@
         const code = codeOverride || challengeCode || 'XXXXXX';
         const base = window.location.href.split('?')[0];
         const joinLink = `${base}?join=${code}`;
-        const text = `🎮 Challenge me on Chat & Play!\n\nGame: ${selectedGame?.name || 'Fun Game'}\nDifficulty: ${difficulty}\nTime: ${timeLimit} min\n\nJoin here: ${joinLink}`;
+        const text = `🎮 ${username} challenged you on Chat & Play!\n\nGame: ${selectedGame?.name || 'Fun Game'}\nDifficulty: ${difficulty}\nTime: ${timeLimit} min\n\nJoin the challenge: ${joinLink}`;
         const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
       };
@@ -175,6 +191,49 @@
         if (!code) return [];
         return JSON.parse(localStorage.getItem(`challenge_${code}`) || '[]');
       };
+
+      
+      // Join invitation popup
+      if (joinPopup) {
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-pink-500/50 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
+              <div className="text-5xl mb-3">🎮</div>
+              <h2 className="text-2xl font-bold mb-2">Game Invitation</h2>
+              <p className="text-white/80 mb-1"><span className="font-semibold text-pink-300">{joinPopup.creator}</span> challenged you!</p>
+              <div className="bg-white/10 rounded-xl p-3 my-4 text-sm">
+                <div><strong>Game:</strong> {joinPopup.game}</div>
+                <div><strong>Difficulty:</strong> {joinPopup.difficulty}</div>
+                <div><strong>Time:</strong> {joinPopup.time} min</div>
+                <div><strong>Code:</strong> {joinPopup.code}</div>
+              </div>
+              <button 
+                onClick={() => {
+                  setJoinCode(joinPopup.code);
+                  setChallengeCode(joinPopup.code);
+                  setPlayVsAI(false);
+                  setJoinPopup(null);
+                  // Ensure participant
+                  const key = `participants_${joinPopup.code}`;
+                  const parts = JSON.parse(localStorage.getItem(key) || '[]');
+                  if (!parts.includes(username) && parts.length < MAX_PLAYERS) {
+                    parts.push(username);
+                    localStorage.setItem(key, JSON.stringify(parts));
+                  }
+                  setScreen('playing');
+                }} 
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 py-3 rounded-xl font-bold mb-2"
+              >
+                Join Game
+              </button>
+              <button onClick={() => setJoinPopup(null)} className="w-full bg-white/20 py-2 rounded-xl">
+                Decline
+              </button>
+            </div>
+          </div>
+        );
+      }
+
 
       if (screen === 'login') {
         return (
@@ -476,18 +535,26 @@
                   <span className="font-semibold">Others Activity</span>
                   <button onClick={() => setShowMini(false)} className="text-white/70 hover:text-white">−</button>
                 </div>
-                <div className="p-2 max-h-32 overflow-y-auto">
-                  {liveScores.length === 0 ? (
-                    <div className="text-white/50">Waiting for others...</div>
+                <div className="p-2 max-h-36 overflow-y-auto text-xs">
+                  {liveScores.length === 0 && !playVsAI ? (
+                    <div className="text-white/50">Waiting for opponent moves...</div>
                   ) : (
                     liveScores.map((s, i) => (
-                      <div key={i} className="flex justify-between py-0.5">
-                        <span className="truncate">{s.username}</span>
-                        <span className="text-yellow-300 font-bold">{s.score}</span>
+                      <div key={i} className="mb-1 p-1 bg-white/5 rounded">
+                        <div className="flex justify-between">
+                          <span className="truncate font-medium">{s.username}</span>
+                          <span className="text-yellow-300 font-bold">{s.score}</span>
+                        </div>
+                        <div className="text-white/60 text-[10px]">Last move: scoring...</div>
                       </div>
                     ))
                   )}
-                  {playVsAI && <div className="mt-1 text-blue-300">AI is playing...</div>}
+                  {playVsAI && (
+                    <div className="mt-1 p-1 bg-blue-500/20 rounded">
+                      <div className="flex justify-between"><span>AI Opponent</span><span className="text-blue-300">Active</span></div>
+                      <div className="text-white/60 text-[10px]">Making moves...</div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
