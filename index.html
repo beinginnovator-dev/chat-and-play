@@ -486,6 +486,25 @@
         return () => clearInterval(interval);
       }, [challengeCode, playVsAI, username]);
 
+      // Poll shared chat for this challenge
+      useEffect(() => {
+        if (!challengeCode) return;
+        const interval = setInterval(() => {
+          const key = `chat_${challengeCode}`;
+          const shared = JSON.parse(localStorage.getItem(key) || '[]');
+          if (shared.length > 0) {
+            setChatMessages(prev => {
+              const existingIds = new Set(prev.map(m => m.id));
+              const newOnes = shared.filter(m => !existingIds.has(m.id));
+              if (newOnes.length === 0) return prev;
+              return [...prev, ...newOnes].slice(-40);
+            });
+          }
+        }, 1500);
+        return () => clearInterval(interval);
+      }, [challengeCode]);
+
+
       useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, [chatMessages]);
