@@ -13,6 +13,11 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; }
     .game-card:hover { transform: translateY(-4px); transition: all 0.2s; }
     .timer { font-variant-numeric: tabular-nums; }
+    .floating-msg { animation: floatUp 4s ease-out forwards; }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-80px); }
+    }
   </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 min-h-screen text-white">
@@ -21,21 +26,17 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useCallback } = React;
 
-    // 10 Games definitions
+    // Updated Games - removed Math, Reaction, Color, Snake
     const GAMES = [
-      { id: 'math', name: 'Math Sprint', icon: '🧮', desc: 'Solve as many math problems as possible', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'memory', name: 'Memory Match', icon: '🧠', desc: 'Flip cards and match pairs', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'reaction', name: 'Reaction Time', icon: '⚡', desc: 'Click as fast as you can when color changes', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'scramble', name: 'Word Scramble', icon: '🔤', desc: 'Unscramble the words', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'sequence', name: 'Number Sequence', icon: '🔢', desc: 'Find the next number in sequence', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'typing', name: 'Typing Speed', icon: '⌨️', desc: 'Type the words as fast as possible', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'color', name: 'Color Match', icon: '🎨', desc: 'Match the color name with the display', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'trivia', name: 'Quick Trivia', icon: '❓', desc: 'Answer trivia questions', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'snake', name: 'Snake', icon: '🐍', desc: 'Classic snake game - eat apples', difficulties: ['Easy', 'Medium', 'Hard'] },
-      { id: 'puzzle', name: 'Slide Puzzle', icon: '🧩', desc: 'Slide tiles to solve the puzzle', difficulties: ['Easy', 'Medium', 'Hard'] },
+      { id: 'memory', name: 'Memory Match', icon: 'fa-brain', desc: 'Flip cards and match pairs', difficulties: ['Easy', 'Medium', 'Hard'] },
+      { id: 'scramble', name: 'Word Scramble', icon: 'fa-font', desc: 'Unscramble the words', difficulties: ['Easy', 'Medium', 'Hard'] },
+      { id: 'sequence', name: 'Number Sequence', icon: 'fa-list-ol', desc: 'Find the next number in sequence', difficulties: ['Easy', 'Medium', 'Hard'] },
+      { id: 'typing', name: 'Typing Speed', icon: 'fa-keyboard', desc: 'Type the words as fast as possible', difficulties: ['Easy', 'Medium', 'Hard'] },
+      { id: 'trivia', name: 'General Knowledge', icon: 'fa-graduation-cap', desc: 'Answer general knowledge questions', difficulties: ['Easy', 'Medium', 'Hard'] },
+      { id: 'puzzle', name: 'Slide Puzzle', icon: 'fa-puzzle-piece', desc: 'Slide tiles to solve the puzzle', difficulties: ['Easy', 'Medium', 'Hard'] },
     ];
 
-    const TIMES = [1, 2, 5]; // minutes
+    const TIMES = [1, 2, 5];
 
     function App() {
       const [username, setUsername] = useState(localStorage.getItem('username') || '');
@@ -61,7 +62,7 @@
       }, [chatMessages]);
 
       const addChat = (user, text) => {
-        setChatMessages(prev => [...prev, { user, text, time: new Date().toLocaleTimeString() }]);
+        setChatMessages(prev => [...prev.slice(-20), { user, text, time: new Date().toLocaleTimeString(), id: Date.now() }]);
       };
 
       const handleLogin = () => {
@@ -107,7 +108,22 @@
         const updated = [newScore, ...scores].slice(0, 50);
         setScores(updated);
         localStorage.setItem('scores', JSON.stringify(updated));
+
+        // Store for dual player comparison
+        if (challengeCode) {
+          const key = `challenge_${challengeCode}`;
+          const existing = JSON.parse(localStorage.getItem(key) || '[]');
+          const filtered = existing.filter(s => s.username !== username);
+          const both = [...filtered, { username, score }];
+          localStorage.setItem(key, JSON.stringify(both));
+        }
+
         addChat('System', `${username} scored ${score} points in ${selectedGame.name}!`);
+      };
+
+      const getChallengeScores = (code) => {
+        if (!code) return [];
+        return JSON.parse(localStorage.getItem(`challenge_${code}`) || '[]');
       };
 
       if (screen === 'login') {
@@ -137,7 +153,7 @@
 
       if (screen === 'home') {
         return (
-          <div className="min-h-screen p-4 md:p-8">
+          <div className="min-h-screen p-4 md:p-8 pb-32">
             <header className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-3xl font-bold">🎮 Chat & Play</h1>
@@ -148,10 +164,10 @@
               </button>
             </header>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {GAMES.map(game => (
-                <div key={game.id} onClick={() => startGame(game)} className="game-card bg-white/10 backdrop-blur rounded-2xl p-4 cursor-pointer border border-white/10 hover:border-pink-400">
-                  <div className="text-4xl mb-2">{game.icon}</div>
+                <div key={game.id} onClick={() => startGame(game)} className="game-card bg-white/10 backdrop-blur rounded-2xl p-5 cursor-pointer border border-white/10 hover:border-pink-400">
+                  <div className="text-4xl mb-3 text-pink-300"><i className={`fas ${game.icon}`}></i></div>
                   <h3 className="font-bold text-lg">{game.name}</h3>
                   <p className="text-sm text-white/60 mt-1">{game.desc}</p>
                 </div>
@@ -172,13 +188,13 @@
             </div>
 
             {/* Chat Panel */}
-            <div className="fixed bottom-4 right-4 w-80 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col max-h-96">
+            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col max-h-80 z-50">
               <div className="p-3 border-b border-white/10 font-semibold flex items-center">
                 <i className="fas fa-comments mr-2 text-pink-400"></i> Live Chat
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 text-sm max-h-60">
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 text-sm max-h-48">
                 {chatMessages.map((m, i) => (
-                  <div key={i} className={`${m.user === 'System' ? 'text-yellow-300' : ''}`}>
+                  <div key={m.id || i} className={`${m.user === 'System' ? 'text-yellow-300' : ''}`}>
                     <span className="font-bold text-pink-300">{m.user}:</span> {m.text}
                     <span className="text-xs text-white/40 ml-2">{m.time}</span>
                   </div>
@@ -212,7 +228,7 @@
           <div className="min-h-screen flex items-center justify-center p-4">
             <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 max-w-lg w-full border border-white/20">
               <button onClick={() => setScreen('home')} className="text-white/60 mb-4 hover:text-white">← Back</button>
-              <div className="text-5xl mb-4 text-center">{selectedGame.icon}</div>
+              <div className="text-5xl mb-4 text-center text-pink-300"><i className={`fas ${selectedGame.icon}`}></i></div>
               <h2 className="text-3xl font-bold text-center mb-2">{selectedGame.name}</h2>
               <p className="text-center text-white/70 mb-6">{selectedGame.desc}</p>
 
@@ -256,18 +272,40 @@
           timeLimit={timeLimit * 60} 
           username={username}
           challengeCode={challengeCode}
+          chatMessages={chatMessages}
+          addChat={addChat}
           onFinish={(score) => { saveScore(score); setScreen('result'); }}
           onExit={() => setScreen('home')}
         />;
       }
 
       if (screen === 'result') {
+        const challengeScores = getChallengeScores(challengeCode);
+        const myScore = challengeScores.find(s => s.username === username)?.score || 0;
+        const opponent = challengeScores.find(s => s.username !== username);
+        const isWinner = opponent ? myScore > opponent.score : true;
+        const isTie = opponent && myScore === opponent.score;
+
         return (
           <div className="min-h-screen flex items-center justify-center p-4">
             <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full text-center border border-white/20">
-              <div className="text-6xl mb-4">🏆</div>
-              <h2 className="text-3xl font-bold mb-2">Challenge Complete!</h2>
-              <p className="text-xl mb-4">Your score has been saved</p>
+              <div className="text-6xl mb-4">{isWinner ? '🏆' : isTie ? '🤝' : '🥈'}</div>
+              <h2 className="text-3xl font-bold mb-2">
+                {isWinner ? 'You Win!' : isTie ? 'It\'s a Tie!' : 'Good Try!'}
+              </h2>
+              <div className="my-6 space-y-3">
+                <div className="bg-white/10 rounded-xl p-3 flex justify-between">
+                  <span>{username}</span>
+                  <span className="font-bold text-green-400">{myScore}</span>
+                </div>
+                {opponent && (
+                  <div className="bg-white/10 rounded-xl p-3 flex justify-between">
+                    <span>{opponent.username}</span>
+                    <span className="font-bold text-yellow-400">{opponent.score}</span>
+                  </div>
+                )}
+              </div>
+              {isWinner && <p className="text-xl text-yellow-300 mb-4 animate-pulse">🎉 Congratulations! 🎉</p>}
               {challengeCode && <p className="bg-white/20 inline-block px-4 py-2 rounded-full mb-4">Code: {challengeCode}</p>}
               <button onClick={shareWhatsApp} className="w-full bg-green-600 py-3 rounded-xl font-semibold mb-3 flex items-center justify-center gap-2">
                 <i className="fab fa-whatsapp"></i> Share Result on WhatsApp
@@ -301,12 +339,14 @@
       return null;
     }
 
-    // Game Player component that renders the actual game
-    function GamePlayer({ game, difficulty, timeLimit, username, challengeCode, onFinish, onExit }) {
+    function GamePlayer({ game, difficulty, timeLimit, username, challengeCode, chatMessages, addChat, onFinish, onExit }) {
       const [timeLeft, setTimeLeft] = useState(timeLimit);
       const [score, setScore] = useState(0);
       const [gameOver, setGameOver] = useState(false);
+      const [chatInput, setChatInput] = useState('');
+      const [floatingMsgs, setFloatingMsgs] = useState([]);
       const timerRef = useRef(null);
+      const chatEndRef = useRef(null);
 
       useEffect(() => {
         timerRef.current = setInterval(() => {
@@ -324,9 +364,22 @@
 
       useEffect(() => {
         if (gameOver) {
-          setTimeout(() => onFinish(score), 1500);
+          setTimeout(() => onFinish(score), 2000);
         }
       }, [gameOver, score]);
+
+      useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [chatMessages]);
+
+      const sendMessage = () => {
+        if (chatInput.trim()) {
+          addChat(username, chatInput);
+          setFloatingMsgs(prev => [...prev, { text: chatInput, id: Date.now() }]);
+          setTimeout(() => setFloatingMsgs(prev => prev.slice(1)), 4000);
+          setChatInput('');
+        }
+      };
 
       const formatTime = (s) => {
         const m = Math.floor(s / 60);
@@ -335,10 +388,10 @@
       };
 
       return (
-        <div className="min-h-screen p-4">
-          <div className="flex justify-between items-center mb-4 bg-black/30 rounded-2xl p-4">
+        <div className="min-h-screen flex flex-col">
+          <div className="flex justify-between items-center p-4 bg-black/30">
             <div>
-              <h2 className="text-xl font-bold">{game.icon} {game.name}</h2>
+              <h2 className="text-xl font-bold"><i className={`fas ${game.icon} mr-2`}></i>{game.name}</h2>
               <p className="text-sm text-white/70">{difficulty} • Code: {challengeCode || 'Solo'}</p>
             </div>
             <div className="text-right">
@@ -348,7 +401,16 @@
             <button onClick={onExit} className="bg-red-500/80 px-4 py-2 rounded-xl">Exit</button>
           </div>
 
-          <div className="bg-white/5 rounded-3xl p-4 min-h-[60vh] flex items-center justify-center">
+          <div className="flex-1 relative flex items-center justify-center p-4">
+            {/* Floating messages */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 space-y-2 z-10">
+              {floatingMsgs.map(m => (
+                <div key={m.id} className="floating-msg bg-pink-500/80 px-4 py-1 rounded-full text-sm">
+                  {username}: {m.text}
+                </div>
+              ))}
+            </div>
+
             {gameOver ? (
               <div className="text-center">
                 <div className="text-6xl mb-4">⏰</div>
@@ -365,77 +427,44 @@
               />
             )}
           </div>
+
+          {/* Chat below game */}
+          <div className="bg-black/40 border-t border-white/10 p-3">
+            <div className="max-h-32 overflow-y-auto mb-2 text-sm space-y-1">
+              {chatMessages.slice(-8).map((m, i) => (
+                <div key={m.id || i} className={m.user === 'System' ? 'text-yellow-300' : ''}>
+                  <span className="font-bold text-pink-300">{m.user}:</span> {m.text}
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && sendMessage()}
+                placeholder="Send a message while playing..."
+                className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-sm"
+              />
+              <button onClick={sendMessage} className="bg-pink-500 px-4 rounded-lg">
+                <i className="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
 
-    // Individual game implementations
     function GameContent({ gameId, difficulty, score, setScore, timeLeft }) {
-      const diffMult = difficulty === 'Easy' ? 1 : difficulty === 'Medium' ? 1.5 : 2;
-
-      if (gameId === 'math') return <MathGame difficulty={difficulty} setScore={setScore} />;
       if (gameId === 'memory') return <MemoryGame difficulty={difficulty} setScore={setScore} />;
-      if (gameId === 'reaction') return <ReactionGame difficulty={difficulty} setScore={setScore} />;
       if (gameId === 'scramble') return <ScrambleGame difficulty={difficulty} setScore={setScore} />;
       if (gameId === 'sequence') return <SequenceGame difficulty={difficulty} setScore={setScore} />;
       if (gameId === 'typing') return <TypingGame difficulty={difficulty} setScore={setScore} />;
-      if (gameId === 'color') return <ColorGame difficulty={difficulty} setScore={setScore} />;
       if (gameId === 'trivia') return <TriviaGame difficulty={difficulty} setScore={setScore} />;
-      if (gameId === 'snake') return <SnakeGame difficulty={difficulty} setScore={setScore} />;
       if (gameId === 'puzzle') return <PuzzleGame difficulty={difficulty} setScore={setScore} />;
       return <div>Game not found</div>;
     }
 
-    // === MATH GAME ===
-    function MathGame({ difficulty, setScore }) {
-      const [problem, setProblem] = useState(null);
-      const [answer, setAnswer] = useState('');
-      const [feedback, setFeedback] = useState('');
-
-      const generate = useCallback(() => {
-        const ops = difficulty === 'Easy' ? ['+', '-'] : difficulty === 'Medium' ? ['+', '-', '*'] : ['+', '-', '*', '/'];
-        const op = ops[Math.floor(Math.random() * ops.length)];
-        let a = Math.floor(Math.random() * (difficulty === 'Easy' ? 20 : difficulty === 'Medium' ? 50 : 100)) + 1;
-        let b = Math.floor(Math.random() * (difficulty === 'Easy' ? 20 : difficulty === 'Medium' ? 30 : 50)) + 1;
-        if (op === '-') { if (a < b) [a, b] = [b, a]; }
-        if (op === '/') { a = b * (Math.floor(Math.random() * 10) + 1); }
-        let ans = eval(`${a}${op}${b}`);
-        setProblem({ text: `${a} ${op} ${b} = ?`, answer: Math.round(ans) });
-        setAnswer('');
-        setFeedback('');
-      }, [difficulty]);
-
-      useEffect(() => { generate(); }, [generate]);
-
-      const submit = () => {
-        if (parseInt(answer) === problem.answer) {
-          setScore(s => s + (difficulty === 'Easy' ? 10 : difficulty === 'Medium' ? 15 : 20));
-          setFeedback('Correct! +points');
-          setTimeout(generate, 400);
-        } else {
-          setFeedback('Wrong!');
-          setTimeout(() => setFeedback(''), 800);
-        }
-      };
-
-      return (
-        <div className="text-center w-full max-w-md">
-          <div className="text-5xl font-bold mb-6">{problem?.text}</div>
-          <input
-            type="number"
-            value={answer}
-            onChange={e => setAnswer(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && submit()}
-            className="w-full text-center text-3xl py-4 rounded-2xl bg-white/20 border-2 border-white/30 mb-4 focus:outline-none focus:border-pink-400"
-            autoFocus
-          />
-          <button onClick={submit} className="bg-pink-500 px-8 py-3 rounded-xl text-xl font-bold">Submit</button>
-          {feedback && <div className={`mt-4 text-xl font-bold ${feedback.includes('Correct') ? 'text-green-400' : 'text-red-400'}`}>{feedback}</div>}
-        </div>
-      );
-    }
-
-    // === MEMORY GAME ===
     function MemoryGame({ difficulty, setScore }) {
       const pairs = difficulty === 'Easy' ? 6 : difficulty === 'Medium' ? 8 : 12;
       const emojis = ['🍎','🍌','🍇','🍊','🍓','🍉','🥝','🍍','🥭','🍑','🍒','🥥','🍋','🍈'];
@@ -482,47 +511,6 @@
       );
     }
 
-    // === REACTION GAME ===
-    function ReactionGame({ difficulty, setScore }) {
-      const [state, setState] = useState('waiting'); // waiting, ready, click
-      const [message, setMessage] = useState('Click to start');
-      const timeoutRef = useRef(null);
-
-      const start = () => {
-        setState('waiting');
-        setMessage('Wait for green...');
-        const delay = 1000 + Math.random() * (difficulty === 'Easy' ? 3000 : difficulty === 'Medium' ? 2000 : 1500);
-        timeoutRef.current = setTimeout(() => {
-          setState('ready');
-          setMessage('CLICK NOW!');
-        }, delay);
-      };
-
-      const click = () => {
-        if (state === 'ready') {
-          setScore(s => s + (difficulty === 'Easy' ? 15 : difficulty === 'Medium' ? 20 : 30));
-          setMessage('Great! +points');
-          setState('waiting');
-          setTimeout(start, 500);
-        } else if (state === 'waiting') {
-          clearTimeout(timeoutRef.current);
-          setMessage('Too early!');
-          setTimeout(start, 1000);
-        }
-      };
-
-      useEffect(() => { start(); return () => clearTimeout(timeoutRef.current); }, []);
-
-      return (
-        <div onClick={click} className={`w-full max-w-md h-64 rounded-3xl flex items-center justify-center text-3xl font-bold cursor-pointer transition-colors ${
-          state === 'ready' ? 'bg-green-500' : state === 'waiting' ? 'bg-red-500/70' : 'bg-white/20'
-        }`}>
-          {message}
-        </div>
-      );
-    }
-
-    // === WORD SCRAMBLE ===
     function ScrambleGame({ difficulty, setScore }) {
       const words = {
         Easy: ['CAT', 'DOG', 'SUN', 'BALL', 'TREE', 'FISH', 'BIRD', 'CAKE'],
@@ -567,7 +555,6 @@
       );
     }
 
-    // === SEQUENCE GAME ===
     function SequenceGame({ difficulty, setScore }) {
       const [seq, setSeq] = useState([]);
       const [answer, setAnswer] = useState('');
@@ -609,7 +596,6 @@
       );
     }
 
-    // === TYPING GAME ===
     function TypingGame({ difficulty, setScore }) {
       const wordLists = {
         Easy: ['cat', 'dog', 'sun', 'run', 'jump', 'play', 'happy', 'fast'],
@@ -650,140 +636,79 @@
       );
     }
 
-    // === COLOR MATCH ===
-    function ColorGame({ difficulty, setScore }) {
-      const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'PURPLE', 'ORANGE', 'PINK', 'WHITE'];
-      const colorMap = { RED: 'text-red-500', BLUE: 'text-blue-500', GREEN: 'text-green-500', YELLOW: 'text-yellow-400', PURPLE: 'text-purple-500', ORANGE: 'text-orange-500', PINK: 'text-pink-500', WHITE: 'text-white' };
-      const [word, setWord] = useState('');
-      const [displayColor, setDisplayColor] = useState('');
-      const [correct, setCorrect] = useState(true);
-
-      const generate = useCallback(() => {
-        const w = colors[Math.floor(Math.random() * colors.length)];
-        const c = difficulty === 'Easy' ? w : colors[Math.floor(Math.random() * colors.length)];
-        setWord(w);
-        setDisplayColor(c);
-        setCorrect(w === c || difficulty === 'Easy');
-      }, [difficulty]);
-
-      useEffect(() => { generate(); }, [generate]);
-
-      const choose = (isMatch) => {
-        const isCorrectChoice = (word === displayColor) === isMatch;
-        if (isCorrectChoice) {
-          setScore(s => s + 15);
-        }
-        generate();
-      };
-
-      return (
-        <div className="text-center">
-          <div className={`text-6xl font-bold mb-8 ${colorMap[displayColor] || 'text-white'}`}>{word}</div>
-          <div className="flex gap-4 justify-center">
-            <button onClick={() => choose(true)} className="bg-green-500 px-8 py-4 rounded-xl text-xl font-bold">MATCH</button>
-            <button onClick={() => choose(false)} className="bg-red-500 px-8 py-4 rounded-xl text-xl font-bold">NO MATCH</button>
-          </div>
-        </div>
-      );
-    }
-
-    // === TRIVIA GAME ===
+    // Enhanced Trivia with General Knowledge + answer feedback
     function TriviaGame({ difficulty, setScore }) {
       const questions = {
         Easy: [
-          { q: 'What color is the sky?', a: ['Blue', 'Green', 'Red'], correct: 0 },
-          { q: 'How many legs does a dog have?', a: ['2', '4', '6'], correct: 1 },
-          { q: 'What is 2 + 2?', a: ['3', '4', '5'], correct: 1 },
+          { q: 'What is the capital of France?', a: ['London', 'Paris', 'Berlin', 'Madrid'], correct: 1 },
+          { q: 'How many continents are there?', a: ['5', '6', '7', '8'], correct: 2 },
+          { q: 'What color is the sky on a clear day?', a: ['Green', 'Blue', 'Red', 'Yellow'], correct: 1 },
+          { q: 'Which animal is known as the King of the Jungle?', a: ['Tiger', 'Lion', 'Elephant', 'Bear'], correct: 1 },
+          { q: 'How many days are in a leap year?', a: ['365', '366', '364', '367'], correct: 1 },
         ],
         Medium: [
-          { q: 'Capital of France?', a: ['London', 'Paris', 'Berlin'], correct: 1 },
-          { q: 'Largest planet?', a: ['Earth', 'Jupiter', 'Mars'], correct: 1 },
-          { q: 'Who painted Mona Lisa?', a: ['Van Gogh', 'Da Vinci', 'Picasso'], correct: 1 },
+          { q: 'Who painted the Mona Lisa?', a: ['Van Gogh', 'Picasso', 'Da Vinci', 'Michelangelo'], correct: 2 },
+          { q: 'What is the largest planet in our solar system?', a: ['Earth', 'Saturn', 'Jupiter', 'Mars'], correct: 2 },
+          { q: 'In which year did World War II end?', a: ['1943', '1945', '1950', '1939'], correct: 1 },
+          { q: 'What is the chemical symbol for gold?', a: ['Go', 'Gd', 'Au', 'Ag'], correct: 2 },
+          { q: 'Which country hosted the 2016 Summer Olympics?', a: ['China', 'Brazil', 'UK', 'Japan'], correct: 1 },
         ],
         Hard: [
-          { q: 'Speed of light approx?', a: ['300,000 km/s', '150,000 km/s', '500,000 km/s'], correct: 0 },
-          { q: 'Atomic number of Carbon?', a: ['6', '8', '12'], correct: 0 },
-          { q: 'Year WWII ended?', a: ['1943', '1945', '1950'], correct: 1 },
+          { q: 'What is the approximate speed of light?', a: ['150,000 km/s', '300,000 km/s', '500,000 km/s', '1,000,000 km/s'], correct: 1 },
+          { q: 'Who discovered penicillin?', a: ['Einstein', 'Newton', 'Fleming', 'Curie'], correct: 2 },
+          { q: 'What is the smallest country in the world?', a: ['Monaco', 'Vatican City', 'Liechtenstein', 'San Marino'], correct: 1 },
+          { q: 'In which year was the first iPhone released?', a: ['2005', '2007', '2009', '2010'], correct: 1 },
+          { q: 'What is the capital of Australia?', a: ['Sydney', 'Melbourne', 'Canberra', 'Perth'], correct: 2 },
         ]
       };
-      const [qIndex, setQIndex] = useState(0);
+
       const qs = questions[difficulty] || questions.Medium;
+      const [qIndex, setQIndex] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [showResult, setShowResult] = useState(false);
       const q = qs[qIndex % qs.length];
 
       const answer = (idx) => {
+        if (showResult) return;
+        setSelected(idx);
+        setShowResult(true);
         if (idx === q.correct) setScore(s => s + 25);
-        setQIndex(i => i + 1);
+        setTimeout(() => {
+          setShowResult(false);
+          setSelected(null);
+          setQIndex(i => i + 1);
+        }, 1500);
       };
 
       return (
         <div className="text-center w-full max-w-lg">
-          <div className="text-2xl mb-8">{q.q}</div>
+          <div className="text-2xl mb-8 font-medium">{q.q}</div>
           <div className="space-y-3">
-            {q.a.map((opt, i) => (
-              <button key={i} onClick={() => answer(i)} className="w-full bg-white/20 py-4 rounded-xl text-lg hover:bg-pink-500/50 transition">
-                {opt}
-              </button>
-            ))}
+            {q.a.map((opt, i) => {
+              let btnClass = "w-full py-4 rounded-xl text-lg transition ";
+              if (!showResult) {
+                btnClass += "bg-white/20 hover:bg-white/30";
+              } else {
+                if (i === q.correct) btnClass += "bg-green-500";
+                else if (i === selected) btnClass += "bg-red-500";
+                else btnClass += "bg-white/10 opacity-60";
+              }
+              return (
+                <button key={i} onClick={() => answer(i)} disabled={showResult} className={btnClass}>
+                  {opt}
+                </button>
+              );
+            })}
           </div>
+          {showResult && (
+            <div className="mt-4 text-lg font-semibold">
+              {selected === q.correct ? '✅ Correct!' : '❌ Incorrect'}
+            </div>
+          )}
         </div>
       );
     }
 
-    // === SNAKE GAME (simplified) ===
-    function SnakeGame({ difficulty, setScore }) {
-      const [snake, setSnake] = useState([{x: 10, y: 10}]);
-      const [food, setFood] = useState({x: 15, y: 15});
-      const [dir, setDir] = useState({x: 1, y: 0});
-      const gridSize = 20;
-      const speed = difficulty === 'Easy' ? 200 : difficulty === 'Medium' ? 150 : 100;
-
-      useEffect(() => {
-        const handleKey = (e) => {
-          if (e.key === 'ArrowUp' && dir.y === 0) setDir({x: 0, y: -1});
-          if (e.key === 'ArrowDown' && dir.y === 0) setDir({x: 0, y: 1});
-          if (e.key === 'ArrowLeft' && dir.x === 0) setDir({x: -1, y: 0});
-          if (e.key === 'ArrowRight' && dir.x === 0) setDir({x: 1, y: 0});
-        };
-        window.addEventListener('keydown', handleKey);
-        return () => window.removeEventListener('keydown', handleKey);
-      }, [dir]);
-
-      useEffect(() => {
-        const interval = setInterval(() => {
-          setSnake(s => {
-            const head = { x: s[0].x + dir.x, y: s[0].y + dir.y };
-            // wrap
-            head.x = (head.x + gridSize) % gridSize;
-            head.y = (head.y + gridSize) % gridSize;
-            const newSnake = [head, ...s];
-            if (head.x === food.x && head.y === food.y) {
-              setScore(sc => sc + 10);
-              setFood({ x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) });
-              return newSnake;
-            }
-            newSnake.pop();
-            return newSnake;
-          });
-        }, speed);
-        return () => clearInterval(interval);
-      }, [dir, food, speed]);
-
-      return (
-        <div className="relative bg-black/40 rounded-2xl" style={{ width: 400, height: 400 }}>
-          {snake.map((seg, i) => (
-            <div key={i} className="absolute bg-green-400 rounded-sm" style={{
-              left: `${seg.x * 20}px`, top: `${seg.y * 20}px`, width: 18, height: 18
-            }} />
-          ))}
-          <div className="absolute bg-red-500 rounded-full" style={{
-            left: `${food.x * 20}px`, top: `${food.y * 20}px`, width: 18, height: 18
-          }} />
-          <div className="absolute bottom-2 left-2 text-xs text-white/60">Use arrow keys</div>
-        </div>
-      );
-    }
-
-    // === SLIDE PUZZLE (simplified 3x3) ===
     function PuzzleGame({ difficulty, setScore }) {
       const size = difficulty === 'Easy' ? 3 : difficulty === 'Medium' ? 3 : 4;
       const [tiles, setTiles] = useState([]);
@@ -791,7 +716,6 @@
 
       useEffect(() => {
         const arr = Array.from({length: size*size}, (_, i) => i);
-        // shuffle
         for (let i = arr.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [arr[i], arr[j]] = [arr[j], arr[i]];
